@@ -390,4 +390,4 @@ print(predictions)
 
 En este ejemplo de Python, cargamos el archivo JSON generado en Java utilizando `pd.read_json()` de la biblioteca `pandas`. Luego, utilizamos `sklearn.linear_model.LinearRegression` para entrenar un modelo de regresión lineal utilizando los campos "id" y "amount"
 
-Como puedes observar Java nos ayuda en el procesamiento sin embargo podemos saltarnos esa parte y conectar python con CassandraDB pero esto te lo dejo en la entrada Python y las bases SQL.
+Como puedes observar Java nos ayuda en el procesamiento sin embargo podemos saltarnos esa parte y conectar python con CassandraDB pero esto te lo dejo en la entrada Python y las bases NoSQL.
