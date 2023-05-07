@@ -211,4 +211,83 @@ Recuerda que para lograr un diagnóstico en tiempo real, es fundamental contar c
 
 Con un enfoque adecuado en la adquisición, procesamiento y utilización de datos en tiempo real, podrás brindar un diagnóstico actualizado al cliente y ayudarle a tomar decisiones informadas sobre su comportamiento de gasto.
 
+## Implementando el modelo
+
+Aquí tienes un ejemplo de cómo extraer datos de Cassandra utilizando Python y el controlador `cassandra-driver`, y luego realizar una regresión logística para determinar si los gastos de los clientes pueden llevar a una posible deuda:
+
+1. Conexión a la base de datos Cassandra:
+```python
+from cassandra.cluster import Cluster
+
+# Configuración y conexión a los nodos de Cassandra
+cluster = Cluster(['tu_nodo_cassandra'])
+session = cluster.connect('tu_keyspace')
+```
+
+2. Consulta de datos en Cassandra:
+```python
+# Ejemplo de consulta para obtener id de cliente, monto y concepto
+query = "SELECT id_cliente, monto, concepto FROM tabla_transacciones"
+rows = session.execute(query)
+
+# Listas para almacenar los datos
+ids_clientes = []
+montos = []
+conceptos = []
+
+# Recorrer los resultados y extraer los datos
+for row in rows:
+    ids_clientes.append(row.id_cliente)
+    montos.append(row.monto)
+    conceptos.append(row.concepto)
+```
+
+3. Preparación de los datos para la regresión logística:
+```python
+import pandas as pd
+
+# Crear un DataFrame con los datos extraídos
+data = pd.DataFrame({'id_cliente': ids_clientes, 'monto': montos, 'concepto': conceptos})
+
+# Codificar los conceptos como variables dummy (one-hot encoding)
+data_encoded = pd.get_dummies(data, columns=['concepto'], drop_first=True)
+
+# Dividir los datos en características (X) y etiquetas (y)
+X = data_encoded.drop('id_cliente', axis=1)
+y = data_encoded['id_cliente']
+```
+
+4. Aplicación de la regresión logística:
+```python
+from sklearn.linear_model import LogisticRegression
+
+# Crear el modelo de regresión logística
+model = LogisticRegression()
+
+# Entrenar el modelo
+model.fit(X, y)
+
+# Obtener las probabilidades de predicción
+probabilities = model.predict_proba(X)[:, 1]
+```
+
+5. Evaluación de las probabilidades de deuda:
+```python
+# Agregar las probabilidades al DataFrame
+data['probabilidad_deuda'] = probabilities
+
+# Ordenar los datos por probabilidad de deuda en orden descendente
+data_sorted = data.sort_values('probabilidad_deuda', ascending=False)
+
+# Filtrar los datos para obtener los gastos imprescindibles
+gastos_imprescindibles = data_sorted[data_sorted['concepto_diversion'] == 0]
+```
+
+En este ejemplo, primero establecemos la conexión con Cassandra y luego ejecutamos una consulta para obtener los datos de id de cliente, monto y concepto de la tabla "tabla_transacciones". Luego, preparamos los datos para la regresión logística codificando los conceptos como variables dummy y dividiendo los datos en características (X) y etiquetas (y).
+
+A continuación, aplicamos la regresión logística utilizando el modelo de `LogisticRegression` de scikit-learn. Obtenemos las probabilidades de predicción y las agregamos al DataFrame de datos.
+
+Finalmente, evaluamos las probabilidades de deuda ordenando los datos por probabilidad de deuda en orden descendente. También filtramos los datos para obtener los gastos imprescindibles (concepto_diversion = 0).
+
+Recuerda que este es solo un ejemplo básico y que puedes ajustar y mejorar el proceso según tus necesidades y los requisitos específicos de tu proyecto.
 
